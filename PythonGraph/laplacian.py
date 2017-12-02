@@ -9,6 +9,78 @@ import os
 import re
 from conjugate_gs import *
 from matrix_stuff import *
+from networkx.generators.threshold import cluster_sequence
+
+def GenrateGraphCluster (noc, clustersize):
+    G1 = nx.complete_graph(clustersize) 
+    mapping = {}
+    for i in range(noc-1):
+        G2 = nx.complete_graph(clustersize) 
+        for j in range(clustersize):
+            mapping[j] = ((i+1)*clustersize)+j
+        print ("mapping" ,mapping)
+        G2 = nx.relabel_nodes(G2, mapping=mapping)
+        I = nx.union(G1,G2)
+        I.add_edge(mapping[0]-1,mapping[0])
+        I.weighted = False
+        for e in I.edges_iter():
+            I.add_edge(e[0],e[1], weight = 1)
+        G1 = I 
+    return I 
+
+def ThreeClusterGraph(n1,n2,n3):
+    G1 = nx.complete_graph(n1)
+    G2 = nx.complete_graph(n2)
+    G3 = nx.complete_graph(n3) 
+    
+    mapping = {}
+    for i in range(n2):
+        mapping[i] = i+n1
+    G2 =  nx.relabel_nodes(G2, mapping=mapping)
+    mapping3 = {}    
+    for i in range(n3):
+        mapping3[i] = i+n1+n2
+    G3 =  nx.relabel_nodes(G3, mapping=mapping3)
+    I1 = nx.union(G1,G2)
+    I1.add_edge(n1-1,n1)
+    I1.weighted = False
+    
+    for e in I1.edges_iter():
+        I1.add_edge(e[0],e[1], weight = 1)
+    I2 = nx.union(I1,G3)
+    
+    I2.add_edge(n2+n1-1,n2+n1)
+    I2.weighted = False
+    #set weight to 1
+    for e in I2.edges_iter():
+        I2.add_edge(e[0],e[1], weight = 1)
+        
+    return I2
+
+
+
+def FourClusterGraph(n1,n2,n3,n4):
+    G = ThreeClusterGraph(n1,n2,n3)
+    H = nx.complete_graph(n4)
+    mapping = {}
+    for i in range(n4):
+        mapping[i] = i+n1+n2+n3
+    H = nx.relabel_nodes(H, mapping=mapping)
+
+    I = nx.union(G,H)
+    I.add_edge(n1+n2+n3-1,n1+n2+n3)
+    I.weighted = False
+    #set weight to 1
+    for e in I.edges_iter():
+        I.add_edge(e[0],e[1], weight = 1)
+
+    print(I.number_of_edges())
+    print(I.number_of_nodes())
+    
+    print(I.edges());
+    #Draw(I);
+    return I
+
 
 def GenDumbbellGraph(n1, n2):
     """ 
@@ -35,7 +107,7 @@ def GenDumbbellGraph(n1, n2):
     print(I.number_of_nodes())
     
     print(I.edges());
-    Draw(I);
+    #Draw(I);
     return I
 
 def GraphFromIncidenceMatrix(E):
@@ -45,9 +117,12 @@ def GraphFromIncidenceMatrix(E):
         G.add_node(i)
 
     for e in E.T:
+        if np.all(np.isclose(e, 0)):
+            continue
         u = np.where(e == 1)[0][0]
         v = np.where(e == -1)[0][0]
         G.add_edge(u, v)
+        print("Edge added between : ", u , " - ",v)
 
     return G
 
@@ -59,8 +134,8 @@ def IncidenceMatrix(G):
     for idx, edge in enumerate(G.edges(data = True)):
         X[edge[0], idx] = 1
         X[edge[1], idx] = -1
-    print('Incidence matrix ')
-    print(X)
+    #print('Incidence matrix ')
+    #print(X)
     return X
 
 def DegreeMatrix(G):
@@ -88,7 +163,24 @@ def Draw(G):
 
 
 def test_pinv():
-    G = GenDumbbellGraph(5,5)
+    G = GenDumbbellGraph( 5,5)
+    G = nx.erdos_renyi_graph(50,0.15)
+    G= nx.wheel_graph(50, create_using=None)
+    
+    deg_tri=[[1,0],[1,0],[1,0],[2,0],[1,0],[2,1],[0,1],[0,1]]
+    G = nx.random_clustered_graph(deg_tri)
+    
+    noc = 3 # number of clusters
+    npc = 5 # node per cluster
+    G = GenrateGraphCluster(noc,npc)
+   # G = ThreeClusterGraph(10,10,10)
+    #G = FourClusterGraph(5,10,8,2)
+    plt.subplot(2,2,1)
+    pos = nx.fruchterman_reingold_layout(G)
+    nx.draw_networkx(G, node_color = 'orange', alpha = 0.6, pos = pos)
+    plt.plot()
+    plt.title('Orignal Graph')
+    
     #G = nx.complete_graph(10)
     L = Laplacian(G)
     E = IncidenceMatrix(G)
@@ -97,17 +189,47 @@ def test_pinv():
     print("with L ", norm(conjugate_pinv(L, L) - L_plus))
     print("with E ", norm(conjugate_pinv(E, L) - L_plus))
     
-    noe = 5
+    noe = 2
+    NG = maxgs(E,L,noe)
+    print ("NG",NG)
+    NGP = GraphFromIncidenceMatrix(NG)
+    plt.subplot(2, 2, 2)
+    nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
+    plt.plot()
+    plt.title('Reduced Graph with 2 nodes')
     
-    print()
+    noe = 3
+    NG = maxgs(E,L,noe)
+    print ("NG",NG)
+    NGP = GraphFromIncidenceMatrix(NG)
+    plt.subplot(2, 2, 3)
+    nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
+    plt.plot()
+    plt.title('Reduced Graph with 3 nodes')
     
-    G2 = conjugate_pinv(E, L) - L_plus
-   # print (G2)
-    Draw(G2)
-    G3 = GraphFromIncidenceMatrix(G2)
-    Draw(G3)
-   
+    noe = 12
+    NG = maxgs(E,L,noe)
+    print ("NG",NG)
+    NGP = GraphFromIncidenceMatrix(NG)
+    plt.subplot(2, 2, 4)
+    nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
+    plt.plot()
+    plt.title('Reduced Graph with 12 nodes')
+    plt.show()
+    #Draw(NG
+    print("with new ",norm(NG))
+    
+    ''''
+    #Min graph - Does not work -------
 
+   # NG = mings(E,L,noe)
+    print ("NG",NG)
+    NGP = GraphFromIncidenceMatrix(NG)
+   # nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
+   # plt.show()
+    print("with new ",norm(NG))
+    
+    
 
     ES = E[:, sort_cols_by_norm(E)]
     print("sorted E ", norm(conjugate_pinv(ES, L) - L_plus))
@@ -132,7 +254,7 @@ def test_pinv():
 
     n = L.shape[1]; RL[:,range(n)] = L[:,range(n)]
     print("Random + L cols (first)", norm(conjugate_pinv(RL, L) - L_plus)) 
-    
+    '''
     
 
 

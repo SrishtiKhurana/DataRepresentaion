@@ -4,54 +4,90 @@ from gram_schmidt import *
 from matrix_stuff import *
 tol = 1E-8
 
+def printedge(e):
+    #print(e)
+    r = e.shape
+    if (np.count_nonzero(e) > 0 ):
+        u = np.where(e == 1)[0][0]
+        v = np.where(e == -1)[0][0]
+        print("Edge is  between : ", u , " - ",v)
+
+
 def maxgs(X,A,noe):
-    U = X
+   
     #print("Inital Incidence matrix ",X)
-    r,c = X.shape 
-    P = U.copy()
-    R = U.copy()
+    r,c = X.shape
+    P = X.copy()
+    R = X.copy()
     cc= 1
     RC = np.zeros(c)
+    print("Printing all edges")
+    for i in range(c) : 
+         q = P[:,i]
+         print("Edge number ", i)
+         printedge(q)
     
     #select noe edges
     for i in range(0,noe):
-        print ("Finding edge no : ",i)
+        #print ("Finding edge no : ",i)
         maxVal = 0 
         maxId = 0 
-        for j in range (1,c):
+        for j in range (c):
             q = P[:,j]
             numer = q.T.dot(A.dot(q))
-            print("numer ",j,": ",numer)
-            if (numer > maxVal):
+            if (numer > maxVal and RC[j] == 0 ):
                 maxId = j 
                 maxVal = numer
                 
         
         # fpund the max edge - orthonormalize the others
-        max_norm = norm(P[:,maxId])
+        # max_norm = norm(P[:,maxId])
         print ("Max Id ", maxId)
-        print ("Max Num ", maxVal)  
-        e = P[:,maxId]    
-        u = np.where(e == 1)[0][0]
-        v = np.where(e == -1)[0][0]
-        print("Edge added between : ", u , " - ",v)
+        print ("Max Num ", maxVal)
+        printedge(P[:,maxId])
+        print(P[:,maxId])
         RC[maxId] = 1
-        for j in range(1, c):
-            proj = np.dot(P[:, maxId], P[:, j])
-            #print("proj",proj)
-            temp = P[:, j] - proj*P[:, maxId]
-           # print("P[:, j]",P[:, j])
-            if np.count_nonzero(temp) == 0:
-                print("Zeroed out" ,j) 
-            
-            P[:,j] = temp       
-        print("recomputed P " , P)
-        P[:,maxId]= 0
-        print("Zeroed : ",P[:, maxId],"--",np.dot(P[:, maxId], P[:, maxId])) 
+        for j in range(c):
+            p = P[:,j]
+            if np.count_nonzero(p) > 0:
+                #proj = np.dot(P[:, maxId], P[:, j])
+                #temp = P[:, j] - proj*P[:, maxId]
+                denom = p.T.dot(A.dot(p))
+                if denom > tol:
+                    numer = p.T.dot(A.dot(P[:,maxId]))
+                    p = p - (numer/denom)*P[:,maxId] 
+                if np.count_nonzero(p) == 0 and j!= maxId:
+                    print("Zeroed out edge number -- " ,j) 
+                    print("Calculation Projections : ")
+                    print(P[:,maxId])
+                    printedge(P[:,j])
+                #print (temp)
+                    print(p)
+                    '''
+                if proj != 0:
+                    print ("Non Zero Projection for ")
+                    printedge(P[:,j])
+                    print("On edge -- ")
+                    printedge(P[:,maxId])
+                   # print ("After Projection" , temp )
+                #P[:,j] = temp
+                     '''
+        #print("recomputed P " , P)
+        print("Zeroed : " )
+        printedge(P[:,maxId]) 
+        P[:,maxId]= 0 
+        print(P[:,maxId])
     #print(P)
     for i in range(0,c):
         if RC[i] == 0:
            R[:,i] = 0
+           print("Zeroed out edge number ", i )
+    
+    print()
+    for i in range(c): 
+        if RC[i] == 1:
+            printedge(R[:,i])
+        
    
     return R  
 

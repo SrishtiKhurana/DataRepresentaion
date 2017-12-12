@@ -11,6 +11,16 @@ from conjugate_gs import *
 from matrix_stuff import *
 from networkx.generators.threshold import cluster_sequence
 
+'''
+Generates graph cluster with 
+input parameters as number 
+of clusters and Cluster Size
+
+Note : there are n-1 connecting 
+edges / bridges between the 
+n clusters
+'''
+  
 def GenrateGraphCluster (noc, clustersize):
     G1 = nx.complete_graph(clustersize) 
     mapping = {}
@@ -28,6 +38,16 @@ def GenrateGraphCluster (noc, clustersize):
         G1 = I 
     return I 
 
+'''
+Generates a 3 Cluster graph 
+given the number of nodes in 
+each cluster. 
+
+Note : there are 2 connecting 
+edges / bridges between the 
+3 clusters 
+ 
+'''
 def ThreeClusterGraph(n1,n2,n3):
     G1 = nx.complete_graph(n1)
     G2 = nx.complete_graph(n2)
@@ -58,6 +78,17 @@ def ThreeClusterGraph(n1,n2,n3):
     return I2
 
 
+
+'''
+Generates a 4 Cluster graph 
+given the number of nodes in 
+each cluster. 
+
+Note : there are 3 connecting 
+edges / bridges between the 
+4 clusters 
+ 
+'''
 
 def FourClusterGraph(n1,n2,n3,n4):
     G = ThreeClusterGraph(n1,n2,n3)
@@ -122,7 +153,7 @@ def GraphFromIncidenceMatrix(E):
         u = np.where(e == 1)[0][0]
         v = np.where(e == -1)[0][0]
         G.add_edge(u, v)
-        print("Edge added between : ", u , " - ",v)
+        #print("Edge added between : ", u , " - ",v)
 
     return G
 
@@ -163,17 +194,16 @@ def Draw(G):
 
 
 def test_pinv():
-    G = GenDumbbellGraph( 5,5)
-    G = nx.erdos_renyi_graph(50,0.15)
-    G= nx.wheel_graph(50, create_using=None)
     
-    deg_tri=[[1,0],[1,0],[1,0],[2,0],[1,0],[2,1],[0,1],[0,1]]
-    G = nx.random_clustered_graph(deg_tri)
-    
-    noc = 3 # number of clusters
-    npc = 5 # node per cluster
+    '''
+    Changes start
+    '''
+    noc = 5 # number of clusters
+    npc = 4 # node per cluster
     G = GenrateGraphCluster(noc,npc)
-   # G = ThreeClusterGraph(10,10,10)
+    
+    #G = GenDumbbellGraph( 15,5)
+    #G = ThreeClusterGraph(10,10,10)
     #G = FourClusterGraph(5,10,8,2)
     plt.subplot(2,2,1)
     pos = nx.fruchterman_reingold_layout(G)
@@ -181,56 +211,50 @@ def test_pinv():
     plt.plot()
     plt.title('Orignal Graph')
     
-    #G = nx.complete_graph(10)
+    
     L = Laplacian(G)
     E = IncidenceMatrix(G)
     L_plus = np.linalg.pinv(L)
 
-    print("with L ", norm(conjugate_pinv(L, L) - L_plus))
-    print("with E ", norm(conjugate_pinv(E, L) - L_plus))
-    
-    noe = 2
+    noe = 12
+    print("Reduced graph with ",noe," edges")
     NG = maxgs(E,L,noe)
     print ("NG",NG)
     NGP = GraphFromIncidenceMatrix(NG)
     plt.subplot(2, 2, 2)
     nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
     plt.plot()
-    plt.title('Reduced Graph with 2 nodes')
+    plt.title('Reduced Graph with 12 edges')
     
-    noe = 3
+    noe = 20
+    print("Reduced graph with ",noe," edges")
     NG = maxgs(E,L,noe)
-    print ("NG",NG)
+    #print ("NG",NG)
     NGP = GraphFromIncidenceMatrix(NG)
     plt.subplot(2, 2, 3)
     nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
     plt.plot()
-    plt.title('Reduced Graph with 3 nodes')
+    plt.title('Reduced Graph with 20 edges')
     
-    noe = 12
+    noe = 40
+    print("Reduced graph with ",noe," edges")
     NG = maxgs(E,L,noe)
-    print ("NG",NG)
+    #print ("NG",NG)
     NGP = GraphFromIncidenceMatrix(NG)
     plt.subplot(2, 2, 4)
     nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
     plt.plot()
-    plt.title('Reduced Graph with 12 nodes')
+    plt.title('Reduced Graph with 40 edges')
     plt.show()
-    #Draw(NG
     print("with new ",norm(NG))
     
-    ''''
-    #Min graph - Does not work -------
-
-   # NG = mings(E,L,noe)
-    print ("NG",NG)
-    NGP = GraphFromIncidenceMatrix(NG)
-   # nx.draw_networkx(NGP, node_color = 'orange', alpha = 0.6, pos = pos)
-   # plt.show()
-    print("with new ",norm(NG))
+    '''
+    Changes End
+    '''
     
+    print("with L ", norm(conjugate_pinv(L, L) - L_plus))
+    print("with E ", norm(conjugate_pinv(E, L) - L_plus))
     
-
     ES = E[:, sort_cols_by_norm(E)]
     print("sorted E ", norm(conjugate_pinv(ES, L) - L_plus))
 
@@ -254,7 +278,7 @@ def test_pinv():
 
     n = L.shape[1]; RL[:,range(n)] = L[:,range(n)]
     print("Random + L cols (first)", norm(conjugate_pinv(RL, L) - L_plus)) 
-    '''
+    
     
 
 

@@ -4,9 +4,13 @@ from gram_schmidt import *
 from matrix_stuff import *
 tol = 1E-8
 
+
 def printedge(e):
-    #print(e)
-    r = e.shape
+    '''
+    Given the edge vector prints the following 
+    Edge is between : x - y
+    :param e: Edge vector in the Incidence Matrix
+    '''
     if (np.count_nonzero(e) > 0 ):
         u = np.where(e == 1)[0][0]
         v = np.where(e == -1)[0][0]
@@ -14,22 +18,33 @@ def printedge(e):
 
 
 def maxgs(X,A,noe):
-   
-    #print("Inital Incidence matrix ",X)
-    r,c = X.shape
-    P = X.copy()
+    '''
+    Takes the max Edge and normalizes all edges 
+    with respect to it 
+    :param X: Incidence Matrix
+    :param A: Laplacian
+    :param noe: Number of edges to select
+    '''
+    C = X.copy()
+    U = (modified_gs(X))
+    U = X
+    r,c = U.shape
+    P = U.copy()
     R = X.copy()
-    cc= 1
     RC = np.zeros(c)
+   
+    '''
     print("Printing all edges")
     for i in range(c) : 
          q = P[:,i]
          print("Edge number ", i)
-         printedge(q)
+        # printedge(q)
+    print ("r,c : ",r ,"  ,", c)
+    print("U : ",U  )
+    '''
     
     #select noe edges
     for i in range(0,noe):
-        #print ("Finding edge no : ",i)
         maxVal = 0 
         maxId = 0 
         for j in range (c):
@@ -40,30 +55,38 @@ def maxgs(X,A,noe):
                 maxVal = numer
                 
         
-        # fpund the max edge - orthonormalize the others
+        # find the max edge - orthonormalize the others
         # max_norm = norm(P[:,maxId])
         print ("Max Id ", maxId)
         print ("Max Num ", maxVal)
-        printedge(P[:,maxId])
+        printedge(C[:,maxId])
         print(P[:,maxId])
         RC[maxId] = 1
+        P = gram_schmit_given_loc(P,maxId)
+       #print(P[:,(maxId+1)])
+        ''' 
+        # alternate changes that did not really work 
+        #in case when there are more edges to be selected
+        
         for j in range(c):
             p = P[:,j]
             if np.count_nonzero(p) > 0:
                 #proj = np.dot(P[:, maxId], P[:, j])
                 #temp = P[:, j] - proj*P[:, maxId]
                 denom = p.T.dot(A.dot(p))
+                print("denom for edge ",j, " is : ", denom)
                 if denom > tol:
                     numer = p.T.dot(A.dot(P[:,maxId]))
+                    print("numer for edge ",j, " is : ", numer)
                     p = p - (numer/denom)*P[:,maxId] 
                 if np.count_nonzero(p) == 0 and j!= maxId:
                     print("Zeroed out edge number -- " ,j) 
                     print("Calculation Projections : ")
                     print(P[:,maxId])
-                    printedge(P[:,j])
+                    printedge(C[:,j])
                 #print (temp)
                     print(p)
-                    '''
+                    
                 if proj != 0:
                     print ("Non Zero Projection for ")
                     printedge(P[:,j])
@@ -71,13 +94,14 @@ def maxgs(X,A,noe):
                     printedge(P[:,maxId])
                    # print ("After Projection" , temp )
                 #P[:,j] = temp
-                     '''
+                     
         #print("recomputed P " , P)
         print("Zeroed : " )
-        printedge(P[:,maxId]) 
+        printedge(C[:,maxId]) 
         P[:,maxId]= 0 
-        print(P[:,maxId])
+        print(C[:,maxId])'''
     #print(P)
+    '''
     for i in range(0,c):
         if RC[i] == 0:
            R[:,i] = 0
@@ -88,11 +112,20 @@ def maxgs(X,A,noe):
         if RC[i] == 1:
             printedge(R[:,i])
         
-   
+   '''
     return R  
 
 
 def mings(X,A,noe):
+    '''
+    tries to take the min edge and normalize all edges 
+    with respect to it 
+    
+    Does not work propley 
+    :param X: Incidence Matrix
+    :param A: Laplacian
+    :param noe: Number of edges to select
+    '''
     U = X
     print("Inital Incidence matrix ",X)
     r,c = X.shape 
@@ -181,7 +214,7 @@ def conjugate_gs(X, A):
         for j in range(i):
             q = P[:, j]
             denom = q.T.dot(A.dot(q))
-            # print("q.T ",q.T)
+            # print("q.T ",q.T)    
             #  print ("D[i] : %d ",denom)
             # D[i] = denom;
             if denom > tol:

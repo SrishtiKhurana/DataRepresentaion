@@ -4,23 +4,23 @@ from numpy.linalg import norm, qr
 tol = 1e-8
 np.set_printoptions(precision=3)
 
-def gram_schmit_given_first(X,I):
+def gram_schmit_given_loc(X,i):
+    '''
+    Normalized all the other vectors given a loction vector
+    :param X: Incidence Matrix 
+    :param i: ith vector acc to wwhich others should be normalized 
+    '''
     r, c = X.shape
-    # each col is a vector 
-    Q = np.zeros((r,c))
-    # swap the first with the ith 
-    
-    for j in range(c):
-        q = X[:,j]
-        for i in range(j):
-            proj = np.dot(Q[:, i], X[:, j])
-            q = q - proj*Q[:,i]
+    Q = X.copy()
+    q_norm = norm(Q[:, i])
+    if q_norm > tol:
+        Q[:, i] = Q[:, i]/q_norm
+    else:
+        Q[:,i] = np.zeros(r)
 
-        q_norm = norm(q)
-        if q_norm != 0:
-           Q[:,j] = q / q_norm
-        else:
-           Q[:,j] = q
+    for j in range(c):
+        proj = np.dot(Q[:, i], Q[:, j])
+        Q[:, j] = Q[:, j] - proj*Q[:, i]
     return Q
 
 def gram_schmidt(X):
